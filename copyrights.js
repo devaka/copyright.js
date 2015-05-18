@@ -10,17 +10,6 @@
 (function($){
     "use strict";
     
-//$(document).on('copy', function(event){
-//    console.log(event.target.tagName);
-//    //if (event.target || event.target.tagName !== '')
-//    
-//    if (methods.isWinSelection()) {
-//        var sel     = window.getSelection();
-//        var rng     = sel.getRangeAt(0);
-////        console.log(rng.intersectsNode($('div.content')[0]));
-//    }
-//});
-
     var methods = {
         opts:   {},
         elements: [],
@@ -34,18 +23,85 @@
                 first: false,
                 sourcetxt: 'Источник',
                 style: '',
-                class: 'copyright-span'
+                className: 'copyright-span'
             }, options || {});
             
             this.each(function(){
-//                methods.elements.push(this);
-                $(this).on('copy', function(event) {
-                    console.log('oncopy');
-                    return methods.beforeCopy(event);
-                });
+                methods.elements.push(this);
             });
-                        
+            
+            var element = methods.isIE() ? 'body' : document;
+
+            $(element).on('copy', function(event){
+                
+                if (!event.target || event.target.tagName === 'TEXTAREA')
+                    return;
+
+                var intersect = false;
+                
+                if (methods.isWinSelection()) {
+                    var sel     = window.getSelection();
+                    var rng     = sel.getRangeAt(0);
+                    
+                    $(methods.elements).each(function(){
+                        if (rng.intersectsNode(this)) 
+                            intersect = true;
+                    });
+                } else if (methods.isDocSelection()) {
+                    var sel     = document.selection;
+                    var rng     = sel.createRange();
+                    
+                    $(methods.elements).each(function(){
+                        var range   = methods.createRangeWithNode(this);
+
+                        if (document.createRange) { // w3c
+
+                            if (rng.compareBoundaryPoints(Range.END_TO_START, range) === -1 
+                                && rng.compareBoundaryPoints(Range.START_TO_END, range) === 1) {
+                                intersect = true;
+                            }
+                        } else { // microsoft
+                            if (rng.compareEndPoints("StartToEnd", range) < 0 &&
+                                rng.compareEndPoints("EndToStart", range) > 0) {
+                                intersect = true;
+                            }
+                        }
+                    });
+                } else {
+                    event.preventDefault();
+                }
+                
+                if (intersect) {
+                    return methods.beforeCopy(event);
+                }
+            });
+
             return this;
+        },
+        
+        createRangeWithNode: function (node) {
+            var range;
+            if(window.getSelection && document.createRange) {
+                range = document.createRange();
+                range.selectNodeContents(node);
+
+            } else if(document.body.createTextRange) {
+                range = document.body.createTextRange();
+                range.moveToElementText(node);
+            }
+            return range;
+
+//            var range = document.body.createTextRange();
+//            range.moveToElementText(node);
+//            return range;
+//            
+//            var rangeWithNode = node.ownerDocument.createRange();
+//            try {
+//                rangeWithNode.selectNode(node);
+//            } catch (ex) {
+//                rangeWithNode.selectNodeContents(node);
+//            }
+//            return rangeWithNode;
         },
         
         isOpera: function() {
@@ -66,16 +122,16 @@
         
         beforeCopy: function(event) {
             var text = methods.getSelection();
-
+            
             if (!text || text.length < methods.opts.length) {
                 return true;
             }
-            
+
             if (text.length >= methods.opts.length && !methods.opts.allowcopy) {
                 event.preventDefault();
                 return;
             }
-            
+
             // ------------------------------------------------------ 
             // Start Check Browser
             // ------------------------------------------------------ 
@@ -125,16 +181,20 @@
             var sel     = document.selection;
             var rng     = sel.createRange();
             var rngClone= rng.duplicate();
+                
+            var copyHolder = document.createElement('DIV');
+            copyHolder.innerHTML = methods.getExtra();
+            copyHolder.setAttribute('style', 'position:absolute;left:-99999em;');
             
-            var copyHolder = $('<div>', {html: newtext, style: "position:absolute;left:-99999em;"});
-            $('body').append(copyHolder);
+            rngClone.collapse(methods.opts.first);
+            rngClone.pasteHTML(copyHolder.outerHTML);
             
-            window.getSelection().selectAllChildren( copyHolder[0] );
-            
-            window.setTimeout(function() {
-                copyHolder.remove();                
-                rngClone.select();
-            }, 0);            
+            if (!methods.opts.first) {
+                rng.setEndPoint("EndToEnd", rngClone); 
+                rng.select();
+            } else {
+                event.preventDefault();
+            }
         },
         
         oprCopy: function(event) {
@@ -181,7 +241,7 @@
                         
             style += methods.opts.style;
 
-            var before = '<span class="'+ methods.opts.class +'"' + (style ? ' style="'+ style +'"' : '') + '>';
+            var before = '<span class="'+ methods.opts.className +'"' + (style ? ' style="'+ style +'"' : '') + '>';
             var after = '</span>';
             
             var text = methods.opts.extratxt
