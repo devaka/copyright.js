@@ -4,14 +4,26 @@
         <title>Copyright.js Example</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link type="text/css" rel="stylesheet" href="http://moxiecode.cachefly.net/tinymce/v9/css/all.min.css?v=1" />
         
         <script type="text/javascript" src="jquery-1.11.1.min.js"></script>
         <script type="text/javascript" src="../copyright.min.js"></script>
+        <script src="http://tinymce.cachefly.net/4.1/tinymce.min.js"></script>
+
         <script type="text/javascript">
+            // COPYRIGHT EXAMPLE
             $(document).ready(function(){
-                 $('div.content').copyright({extratxt: '&copy; %source%', sourcetxt: 'Devaka.ru'});
+                 $('div.content').copyright({extratxt: '&copy; %source%', sourcetxt: 'Devaka.ru', hide: false});
+            });
+
+            // TINYMCE FOR PASTE 
+            tinymce.init({
+                selector:'textarea'
             });
         </script>
+        <style type="text/css">
+            body {padding:0 1em;}
+        </style>
     </head>
     <body>
         <div>
@@ -34,6 +46,9 @@
         </div>
         <div>
             <p>There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc.</p>
+        </div>
+        <div>
+            <textarea cols="100" rows="15">Paste copied text here!</textarea>
         </div>
     </body>
 </html>
